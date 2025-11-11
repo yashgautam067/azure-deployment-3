@@ -1,0 +1,32 @@
+language: generic
+dist: jammy
+
+jobs:
+  include:
+    - stage: "Resource Group Test (3 Hours)"
+      name: "Terraform Apply → Wait 3 Hours → Destroy"
+
+      before_install:
+        - TF_VERSION="1.5.7"
+        - wget https://releases.hashicorp.com/terraform/${TF_VERSION}/terraform_${TF_VERSION}_linux_amd64.zip
+        - unzip terraform_${TF_VERSION}_linux_amd64.zip
+        - sudo mv terraform /usr/local/bin/
+        - terraform --version
+
+      script:
+        - terraform init -input=false
+        - terraform validate
+        - terraform apply -auto-approve -input=false
+        - echo "--- ✅ Resource Group Created ---"
+
+        # Wait for 3 hours with per-second logging
+        - |
+          echo "--- ⏳ Waiting for 3 hours (10800 seconds) ---"
+          for i in $(seq 1 10800); do
+            echo "⏱ $i seconds completed..."
+            sleep 1
+          done
+
+        - echo "--- 💣 Starting Terraform Destroy ---"
+        - terraform destroy -auto-approve -input=false
+        - echo "--- ✅ Resource Group Deleted ---"
